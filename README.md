@@ -5,3 +5,8 @@
 - [x] 가상환경 구성하기
 - [x] 과제 완료하기
 - [x] 코드리뷰하기
+
+## [Assignment 2 : Welcome To Langchain 🦜🔗](https://github.com/lips85/GPT_hary/blob/main/Assignment1.ipynb)
+
+- [ ] 과제 완료하기
+- [ ] 코드리뷰하기
