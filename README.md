@@ -11,3 +11,9 @@
 - [x] 과제 강의 듣기
 - [x] 과제 완료하기
 - [x] 코드리뷰하기
+
+## [Assignment 3 : Memory](https://github.com/lips85/GPT_hary/blob/main/GTP_jupyterNote/Assignment3.ipynb)
+
+- [x] 과제 강의 듣기
+- [x] 과제 완료하기
+- [x] 코드리뷰하기
