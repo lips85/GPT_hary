@@ -168,36 +168,36 @@ with st.sidebar:
         """
     )
 
-llm = ChatOpenAI(
-    temperature=0.1,
-    streaming=True,
-    callbacks={
-        ChatCallbackHandler(),
-    },
-    model=st.session_state["openai_model"],
-    openai_api_key=st.session_state["api_key"],
-)
-
-prompt = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            """
-            You are an AI that reads documents for me. Please answer based on the document given below. 
-            If the information is not in the document, answer the question with “The required information is not in the document.” Never make up answers.
-            Please answer in the questioner's language 
-            
-            Context : {context}
-            """,
-        ),
-        ("human", "{question}"),
-    ]
-)
-
 
 if (st.session_state["api_key_check"] == True) and (
     st.session_state["api_key"] is not None
 ):
+    llm = ChatOpenAI(
+        temperature=0.1,
+        streaming=True,
+        callbacks={
+            ChatCallbackHandler(),
+        },
+        model=st.session_state["openai_model"],
+        openai_api_key=st.session_state["api_key"],
+    )
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                """
+                You are an AI that reads documents for me. Please answer based on the document given below. 
+                If the information is not in the document, answer the question with “The required information is not in the document.” Never make up answers.
+                Please answer in the questioner's language 
+                
+                Context : {context}
+                """,
+            ),
+            ("human", "{question}"),
+        ]
+    )
+
     if file:
         retriever = embed_file(file)
         send_message("I'm ready! Ask away!", "ai", save=False)
