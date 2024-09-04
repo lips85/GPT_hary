@@ -164,7 +164,7 @@ with st.sidebar:
         https://github.com/lips85/GPT_hary
 
         streamlit
-        https://nomad-langchain-hary.streamlit.app/
+        https://hary-gpt.streamlit.app/
 
         """
     )
@@ -196,7 +196,9 @@ prompt = ChatPromptTemplate.from_messages(
 )
 
 
-if (st.session_state["api_key_check"]) and (st.session_state["api_key"] is not None):
+if (st.session_state["api_key_check"] == True) and (
+    st.session_state["api_key"] is not None
+):
     if file:
         retriever = embed_file(file)
         send_message("I'm ready! Ask away!", "ai", save=False)
