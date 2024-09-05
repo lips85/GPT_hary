@@ -27,6 +27,7 @@ for key, default in [
     ("api_key_check", False),
     ("openai_model", "선택해주세요"),
     ("openai_model_check", False),
+    ("file", None),
     ("file_check", False),
 ]:
     if key not in st.session_state:
@@ -104,8 +105,8 @@ def embed_file(file):
 
 
 # 파일 업로드 체크 함수
-def save_file(file):
-    if file:
+def save_file():
+    if st.session_state["file"]:
         st.session_state["file_check"] = True
     else:
         st.session_state["file_check"] = False
