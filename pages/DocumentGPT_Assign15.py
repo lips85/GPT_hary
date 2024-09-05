@@ -84,8 +84,7 @@ class ChatCallbackHandler(BaseCallbackHandler):
 # 파일 임베딩 함수
 @st.cache_resource(show_spinner="Embedding file...")
 def embed_file(file):
-    if not st.session_state["file_check"]:
-        return
+    st.session_state["file_check"] = True
     os.makedirs("./.cache/files", exist_ok=True)
     file_path = f"./.cache/files/{file.name}"
     with open(file_path, "wb") as f:
@@ -218,7 +217,7 @@ if (
     )
 
     if file:
-        st.session_state["file_check"] = True
+
         retriever = embed_file(file)
         send_message("I'm ready! Ask away!", "ai", save=False)
         paint_history()
