@@ -232,7 +232,7 @@ if (
         ]
     )
 
-    if file:
+    if st.session_state["file_check"]:
         retriever = embed_file(file)
         send_message("I'm ready! Ask away!", "ai", save=False)
         paint_history()
