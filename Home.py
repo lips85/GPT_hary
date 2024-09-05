@@ -13,7 +13,7 @@ Welcome to my FullstackGPT Portfolio!
             
 Here are the apps I made:
             
-- [x] [DocumentGPT](/DocumentGPT_Assign15)
+- [x] [DocumentGPT](pages/DocumentGPT_Assign15.py)
 
 """
 )
