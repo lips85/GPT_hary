@@ -26,6 +26,7 @@ for key, default in [
     ("api_key", None),
     ("api_key_check", False),
     ("openai_model", "선택해주세요"),
+    ("openai_model_check", False),
 ]:
     if key not in st.session_state:
         st.session_state[key] = default
@@ -35,17 +36,25 @@ API_KEY_pattern = r"sk-.*"
 Model_pattern = r"gpt-*"
 
 # OpenAI 모델 목록
-openai_models = ["선택해주세요", "gpt-4o-mini-2024-07-18", "gpt-4o-mini-2024-07-18"]
+openai_models = ["선택해주세요", "gpt-4o-mini-2024-07-18", "gpt-4o-2024-08-06"]
 
 # 페이지 제목 및 설명
 st.title("DocumentGPT")
-st.markdown(
-    """
-    안녕하세요! 이 페이지는 문서를 읽어주는 AI입니다.😄 
-    
-    문서를 업로드하고 질문을 하면 문서에 대한 답변을 해줍니다.
-    """
-)
+
+if not (st.session_state["api_key_check"] and st.session_state["openai_model_check"]):
+    st.markdown(
+        """
+        안녕하세요! 이 페이지는 문서를 읽어주는 AI입니다.😄 
+        
+        문서를 업로드하고 질문을 하면 문서에 대한 답변을 해줍니다.
+        """
+    )
+    if not st.session_state["api_key_check"]:
+        st.warning("API_KEY를 넣어주세요.")
+    if not st.session_state["openai_model_check"]:
+        st.warning("모델을 선택해주세요.")
+else:
+    st.success("😄API_KEY와 모델이 저장되었습니다.😄")
 
 
 # 콜백 핸들러 클래스
@@ -128,21 +137,33 @@ with st.sidebar:
     file = st.file_uploader(
         "Upload a .txt .pdf or .docx file", type=["pdf", "txt", "docx"]
     )
-    api_key = st.text_input("API_KEY 입력", placeholder="sk-...").strip()
+    api_key = st.text_input(
+        "API_KEY 입력",
+        placeholder="sk-...",
+        on_change=lambda: (
+            save_api_key(st.session_state["api_key"])
+            if re.match(API_KEY_pattern, st.session_state["api_key"])
+            else None
+        ),
+        key="api_key",
+    )
 
-    if api_key:
-        save_api_key(api_key)
-        st.write("😄API_KEY가 저장되었습니다.😄")
+    if st.session_state["api_key_check"]:
+        st.success("😄API_KEY가 저장되었습니다.😄")
+    else:
+        st.warning("API_KEY를 넣어주세요.")
 
-    if st.button("저장"):
-        save_api_key(api_key)
-        if not api_key:
-            st.warning("OPENAI_API_KEY를 넣어주세요.")
+    openai_model = st.selectbox(
+        "OpenAI Model을 골라주세요.",
+        options=openai_models,
+        on_change=lambda: save_openai_model(st.session_state["openai_model"]),
+        key="openai_model",
+    )
 
-    openai_model = st.selectbox("OpneAI Model을 골라주세요.", options=openai_models)
-    if openai_model != "선택해주세요" and re.match(Model_pattern, openai_model):
-        save_openai_model(openai_model)
-        st.write("😄모델이 선택되었습니다.😄")
+    if st.session_state["openai_model_check"]:
+        st.success("😄모델이 선택되었습니다.😄")
+    else:
+        st.warning("모델을 선택해주세요.")
 
     st.write(
         """
@@ -157,7 +178,12 @@ with st.sidebar:
     )
 
 # 메인 로직
-if st.session_state["api_key_check"] and st.session_state["api_key"]:
+if (
+    st.session_state["api_key_check"]
+    and st.session_state["api_key"]
+    and st.session_state["openai_model_check"]
+):
+
     llm = ChatOpenAI(
         temperature=0.1,
         streaming=True,
