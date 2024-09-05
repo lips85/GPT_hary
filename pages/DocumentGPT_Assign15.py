@@ -84,7 +84,6 @@ class ChatCallbackHandler(BaseCallbackHandler):
 # 파일 임베딩 함수
 @st.cache_resource(show_spinner="Embedding file...")
 def embed_file(file):
-    st.session_state["file_check"] = True
     os.makedirs("./.cache/files", exist_ok=True)
     file_path = f"./.cache/files/{file.name}"
     with open(file_path, "wb") as f:
@@ -102,6 +101,14 @@ def embed_file(file):
     cached_embeddings = CacheBackedEmbeddings.from_bytes_store(embeddings, cache_dir)
     vectorstore = FAISS.from_documents(docs, cached_embeddings)
     return vectorstore.as_retriever()
+
+
+# 파일 업로드 체크 함수
+def save_file(file):
+    if file:
+        st.session_state["file_check"] = True
+    else:
+        st.session_state["file_check"] = False
 
 
 # 메시지 저장 함수
@@ -143,8 +150,16 @@ def save_openai_model(openai_model):
 # 사이드바 설정
 with st.sidebar:
     file = st.file_uploader(
-        "Upload a .txt .pdf or .docx file", type=["pdf", "txt", "docx"]
+        "Upload a .txt .pdf or .docx file",
+        type=["pdf", "txt", "docx"],
+        on_change=save_file,
+        key="file",
     )
+    if st.session_state["file_check"]:
+        st.success("😄문서가 업로드되었습니다.😄")
+    else:
+        st.warning("문서를 업로드해주세요.")
+
     api_key = st.text_input(
         "API_KEY 입력",
         placeholder="sk-...",
@@ -188,7 +203,7 @@ with st.sidebar:
 # 메인 로직
 if (
     st.session_state["api_key_check"]
-    and st.session_state["api_key"]
+    and st.session_state["file_check"]
     and st.session_state["openai_model_check"]
 ):
 
@@ -217,7 +232,6 @@ if (
     )
 
     if file:
-
         retriever = embed_file(file)
         send_message("I'm ready! Ask away!", "ai", save=False)
         paint_history()
