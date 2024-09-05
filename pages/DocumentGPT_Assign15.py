@@ -54,12 +54,19 @@ if not (
         문서를 업로드하고 질문을 하면 문서에 대한 답변을 해줍니다.
         """
     )
-    if not st.session_state["api_key_check"]:
-        st.warning("API_KEY를 넣어주세요.")
-    if not st.session_state["openai_model_check"]:
-        st.warning("모델을 선택해주세요.")
+
     if not st.session_state["file_check"]:
         st.warning("문서를 업로드해주세요.")
+    else:
+        st.success("😄문서가 업로드되었습니다.😄")
+    if not st.session_state["api_key_check"]:
+        st.warning("API_KEY를 넣어주세요.")
+    else:
+        st.success("😄API_KEY가 저장되었습니다.😄")
+    if not st.session_state["openai_model_check"]:
+        st.warning("모델을 선택해주세요.")
+    else:
+        st.success("😄모델이 선택되었습니다.😄")
 else:
     st.success("😄API_KEY와 모델이 저장되었습니다.😄")
 
