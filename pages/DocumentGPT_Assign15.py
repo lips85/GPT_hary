@@ -27,7 +27,6 @@ for key, default in [
     ("api_key_check", False),
     ("openai_model", "선택해주세요"),
     ("openai_model_check", False),
-    ("file", None),
     ("file_check", False),
 ]:
     if key not in st.session_state:
@@ -106,10 +105,7 @@ def embed_file(file):
 
 # 파일 업로드 체크 함수
 def save_file():
-    if st.session_state["file"]:
-        st.session_state["file_check"] = True
-    else:
-        st.session_state["file_check"] = False
+    st.session_state["file_check"] = st.session_state.file is not None
 
 
 # 메시지 저장 함수
@@ -137,20 +133,21 @@ def format_docs(docs):
 
 
 # API 키 저장 함수
-def save_api_key(api_key):
-    st.session_state["api_key"] = api_key
-    st.session_state["api_key_check"] = True
+def save_api_key():
+    if re.match(API_KEY_pattern, st.session_state["api_key"]):
+        st.session_state["api_key_check"] = True
 
 
 # OpenAI 모델 저장 함수
-def save_openai_model(openai_model):
-    st.session_state["openai_model"] = openai_model
-    st.session_state["openai_model_check"] = True
+def save_openai_model():
+    st.session_state["openai_model_check"] = (
+        st.session_state["openai_model"] != "선택해주세요"
+    )
 
 
 # 사이드바 설정
 with st.sidebar:
-    file = st.file_uploader(
+    st.file_uploader(
         "Upload a .txt .pdf or .docx file",
         type=["pdf", "txt", "docx"],
         on_change=save_file,
@@ -161,14 +158,10 @@ with st.sidebar:
     else:
         st.warning("문서를 업로드해주세요.")
 
-    api_key = st.text_input(
+    st.text_input(
         "API_KEY 입력",
         placeholder="sk-...",
-        on_change=lambda: (
-            save_api_key(st.session_state["api_key"])
-            if re.match(API_KEY_pattern, st.session_state["api_key"])
-            else None
-        ),
+        on_change=save_api_key,
         key="api_key",
     )
 
@@ -177,10 +170,10 @@ with st.sidebar:
     else:
         st.warning("API_KEY를 넣어주세요.")
 
-    openai_model = st.selectbox(
+    st.selectbox(
         "OpenAI Model을 골라주세요.",
         options=openai_models,
-        on_change=lambda: save_openai_model(st.session_state["openai_model"]),
+        on_change=save_openai_model,
         key="openai_model",
     )
 
@@ -207,7 +200,6 @@ if (
     and st.session_state["file_check"]
     and st.session_state["openai_model_check"]
 ):
-
     llm = ChatOpenAI(
         temperature=0.1,
         streaming=True,
@@ -232,8 +224,10 @@ if (
         ]
     )
 
-    if st.session_state["file_check"]:
-        retriever = embed_file(file)
+    retriever = (
+        embed_file(st.session_state["file"]) if st.session_state["file_check"] else None
+    )
+    if retriever:
         send_message("I'm ready! Ask away!", "ai", save=False)
         paint_history()
         message = st.chat_input("Ask anything about your file...")
