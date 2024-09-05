@@ -27,6 +27,7 @@ for key, default in [
     ("api_key_check", False),
     ("openai_model", "선택해주세요"),
     ("openai_model_check", False),
+    ("file_check", False),
 ]:
     if key not in st.session_state:
         st.session_state[key] = default
@@ -41,7 +42,11 @@ openai_models = ["선택해주세요", "gpt-4o-mini-2024-07-18", "gpt-4o-2024-08
 # 페이지 제목 및 설명
 st.title("DocumentGPT")
 
-if not (st.session_state["api_key_check"] and st.session_state["openai_model_check"]):
+if not (
+    st.session_state["api_key_check"]
+    and st.session_state["openai_model_check"]
+    and st.session_state["file_check"]
+):
     st.markdown(
         """
         안녕하세요! 이 페이지는 문서를 읽어주는 AI입니다.😄 
@@ -53,6 +58,8 @@ if not (st.session_state["api_key_check"] and st.session_state["openai_model_che
         st.warning("API_KEY를 넣어주세요.")
     if not st.session_state["openai_model_check"]:
         st.warning("모델을 선택해주세요.")
+    if not st.session_state["file_check"]:
+        st.warning("문서를 업로드해주세요.")
 else:
     st.success("😄API_KEY와 모델이 저장되었습니다.😄")
 
@@ -77,6 +84,8 @@ class ChatCallbackHandler(BaseCallbackHandler):
 # 파일 임베딩 함수
 @st.cache_resource(show_spinner="Embedding file...")
 def embed_file(file):
+    if not st.session_state["file_check"]:
+        return
     os.makedirs("./.cache/files", exist_ok=True)
     file_path = f"./.cache/files/{file.name}"
     with open(file_path, "wb") as f:
@@ -209,6 +218,7 @@ if (
     )
 
     if file:
+        st.session_state["file_check"] = True
         retriever = embed_file(file)
         send_message("I'm ready! Ask away!", "ai", save=False)
         paint_history()
