@@ -22,26 +22,22 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-# 클라우드페어 공식문서 사이트맵?
-# https://developers.cloudflare.com/sitemap.xml
-# https://developers.cloudflare.com/sitemap-0.xml
-
-
 st.set_page_config(
     page_title="SiteGPT",
     page_icon="🖥️",
     layout="wide",
 )
 
-st.markdown(
+if not (st.session_state["api_key_check"] and st.session_state["openai_model_check"]):
+    st.markdown(
+        """
+        # SiteGPT
+
+        사이트에 대해 질문해 보세요!!
+
+        왼쪽 사이드바에 사이트를 추가해 보세요!!
     """
-    # SiteGPT
-
-    사이트에 대해 질문해 보세요!!
-
-    왼쪽 사이드바에 사이트를 추가해 보세요!!
- """
-)
+    )
 
 # 세션 상태 초기화
 for key, default in [
