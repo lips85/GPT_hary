@@ -13,6 +13,14 @@ from langchain.embeddings.cache import CacheBackedEmbeddings
 from langchain.storage import LocalFileStore
 from langchain.memory.buffer import ConversationBufferMemory
 
+# 파일 분리 (상수들)
+from utils.constant.constant import OPENAI_MODEL, API_KEY_PATTERN, MODEL_PATTERN
+
+# 디버그용
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 # 클라우드페어 공식문서 사이트맵?
 # https://developers.cloudflare.com/sitemap.xml
@@ -50,14 +58,6 @@ for key, default in [
         st.session_state[key] = default
 
 
-# API 키 패턴과 모델 패턴 정의
-API_KEY_pattern = r"sk-.*"
-Model_pattern = r"gpt-*"
-
-# 사용 가능한 OpenAI 모델 목록
-openai_models = ["선택해주세요", "gpt-4o-mini-2024-07-18", "gpt-4o-2024-08-06"]
-
-
 # 콜백 핸들러 클래스 정의
 class ChatCallbackHandler(BaseCallbackHandler):
     def __init__(self):
@@ -68,66 +68,65 @@ class ChatCallbackHandler(BaseCallbackHandler):
         self.message_box = st.empty()
 
     def on_llm_end(self, *args, **kwargs):
-        save_message(self.message, "ai")
+        ChatMemory.save_message(self.message, "ai")
 
     def on_llm_new_token(self, token, *args, **kwargs):
         self.message += token
         self.message_box.markdown(self.message)
 
 
-# 파일 업로드 체크 함수
-def save_file():
-    st.session_state["file_check"] = st.session_state.file is not None
+class SaveEnv:
+    @staticmethod
+    def save_api_key():
+        st.session_state["api_key_check"] = bool(
+            re.match(API_KEY_PATTERN, st.session_state["api_key"])
+        )
+
+    @staticmethod
+    def save_file():
+        st.session_state["file_check"] = st.session_state.file is not None
+
+    @staticmethod
+    def save_openai_model():
+        st.session_state["openai_model_check"] = (
+            st.session_state["openai_model"] != "선택해주세요"
+        )
+
+    @staticmethod
+    def save_url():
+        if st.session_state["url"]:
+            st.session_state["url_check"] = True
+            st.session_state["url_name"] = (
+                st.session_state["url"].split("://")[1].replace("/", "_")
+            )
+        else:
+            st.session_state["url_check"] = False
+            st.session_state["url_name"] = None
 
 
-# 메시지 저장 함수
-def save_message(message, role):
-    st.session_state["messages"].append({"message": message, "role": role})
+class ChatMemory:
+    @staticmethod
+    def save_message(message, role):
+        st.session_state["messages"].append({"message": message, "role": role})
 
+    # 메시지 전송 함수
+    @staticmethod
+    def send_message(message, role, save=True):
+        with st.chat_message(role):
+            st.markdown(message)
+        if save:
+            ChatMemory.save_message(message, role)
 
-# 메시지 전송 함수
-def send_message(message, role, save=True):
-    with st.chat_message(role):
-        st.markdown(message)
-    if save:
-        save_message(message, role)
-
-
-# 채팅 기록 표시 함수
-def paint_history():
-    for message in st.session_state["messages"]:
-        send_message(message["message"], message["role"], save=False)
+    # 채팅 기록 표시 함수
+    @staticmethod
+    def paint_history():
+        for message in st.session_state["messages"]:
+            ChatMemory.send_message(message["message"], message["role"], save=False)
 
 
 # 문서 포맷팅 함수
 def format_docs(docs):
     return "\n\n".join(document.page_content for document in docs)
-
-
-# API 키 저장 함수
-def save_api_key():
-    if re.match(API_KEY_pattern, st.session_state["api_key"]):
-        st.session_state["api_key_check"] = True
-
-
-# OpenAI 모델 저장 함수
-def save_openai_model():
-    st.session_state["openai_model_check"] = (
-        st.session_state["openai_model"] != "선택해주세요"
-    )
-
-
-# url 저장 함수
-def save_url():
-    if st.session_state["url"] != "":
-        st.session_state["url_check"] = True
-        st.session_state["url_name"] = (
-            st.session_state["url"].split("://")[1].replace("/", "_")
-            if st.session_state["url"]
-            else None
-        )
-    else:
-        st.session_state["url_check"] = False
 
 
 # 디버깅용 지우는 함수
@@ -325,7 +324,7 @@ with st.sidebar:
     st.text_input(
         "API_KEY 입력",
         placeholder="sk-...",
-        on_change=save_api_key,
+        on_change=SaveEnv.save_api_key,
         key="api_key",
         type="password",
     )
@@ -345,8 +344,8 @@ with st.sidebar:
 
     st.selectbox(
         "OpenAI Model을 골라주세요.",
-        options=openai_models,
-        on_change=save_openai_model,
+        options=OPENAI_MODEL,
+        on_change=SaveEnv.save_openai_model,
         key="openai_model",
     )
 
@@ -356,11 +355,12 @@ with st.sidebar:
         st.warning("모델을 선택해주세요.")
 
     st.divider()
+
     st.text_input(
         "Write down a URL",
         placeholder="https://example.com/sitemap.xml",
         key="url",
-        on_change=save_url,
+        on_change=SaveEnv.save_url,
     )
 
     if st.session_state["url_check"]:
@@ -408,14 +408,14 @@ else:
                 st.error("Please write down a Sitemap URL.")
         else:
             retriever = load_website(st.session_state["url"])
-            send_message("I'm ready! Ask away!", "ai", save=False)
-            paint_history()
+            ChatMemory.send_message("I'm ready! Ask away!", "ai", save=False)
+            ChatMemory.paint_history()
             message = st.chat_input("Ask a question to the website.")
             if message:
-                if re.match(API_KEY_pattern, st.session_state["api_key"]) and re.match(
-                    Model_pattern, st.session_state["openai_model"]
+                if re.match(API_KEY_PATTERN, st.session_state["api_key"]) and re.match(
+                    MODEL_PATTERN, st.session_state["openai_model"]
                 ):
-                    send_message(message, "human")
+                    ChatMemory.send_message(message, "human")
                     try:
                         chain = (
                             {
@@ -443,6 +443,6 @@ else:
 
                 else:
                     message = "OPENAI_API_KEY or 모델 선택이 잘못되었습니다. 사이드바를 다시 확인하세요."
-                    send_message(message, "ai")
+                    ChatMemory.send_message(message, "ai")
     else:
         st.session_state["messages"] = []

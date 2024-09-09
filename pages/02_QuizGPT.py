@@ -9,6 +9,9 @@ from langchain.document_loaders import UnstructuredFileLoader
 from langchain.retrievers import WikipediaRetriever
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
+# 파일 분리 (상수들)
+from utils.constant.constant import OPENAI_MODEL, API_KEY_PATTERN
+
 
 st.set_page_config(
     page_title="QuizGPT❓❗️",
@@ -27,16 +30,10 @@ for key, default in [
     if key not in st.session_state:
         st.session_state[key] = default
 
-# 정규 표현식 패턴
-API_KEY_pattern = r"sk-.*"
-
-# OpenAI 모델 목록
-openai_models = ["선택해주세요", "gpt-4o-mini-2024-07-18", "gpt-4o-2024-08-06"]
-
 
 # API 키 저장 함수
 def save_api_key():
-    if re.match(API_KEY_pattern, st.session_state["api_key"]):
+    if re.match(API_KEY_PATTERN, st.session_state["api_key"]):
         st.session_state["api_key_check"] = True
 
 
@@ -144,7 +141,7 @@ with st.sidebar:
 
     st.selectbox(
         "OpenAI Model을 골라주세요.",
-        options=openai_models,
+        options=OPENAI_MODEL,
         on_change=save_openai_model,
         key="openai_model",
     )

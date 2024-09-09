@@ -13,6 +13,9 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.schema.runnable import RunnablePassthrough, RunnableLambda
 from langchain.callbacks.base import BaseCallbackHandler
 
+# 파일 분리 (상수들)
+from utils.constant.constant import OPENAI_MODEL, API_KEY_PATTERN, MODEL_PATTERN
+
 # Streamlit 페이지 설정
 st.set_page_config(
     page_title="DocumentGPT",
@@ -32,12 +35,6 @@ for key, default in [
     if key not in st.session_state:
         st.session_state[key] = default
 
-# 정규 표현식 패턴
-API_KEY_pattern = r"sk-.*"
-Model_pattern = r"gpt-*"
-
-# OpenAI 모델 목록
-openai_models = ["선택해주세요", "gpt-4o-mini-2024-07-18", "gpt-4o-2024-08-06"]
 
 # 페이지 제목 및 설명
 st.title("DocumentGPT")
@@ -141,7 +138,7 @@ def format_docs(docs):
 
 # API 키 저장 함수
 def save_api_key():
-    if re.match(API_KEY_pattern, st.session_state["api_key"]):
+    if re.match(API_KEY_PATTERN, st.session_state["api_key"]):
         st.session_state["api_key_check"] = True
 
 
@@ -179,7 +176,7 @@ with st.sidebar:
 
     st.selectbox(
         "OpenAI Model을 골라주세요.",
-        options=openai_models,
+        options=OPENAI_MODEL,
         on_change=save_openai_model,
         key="openai_model",
     )
@@ -240,8 +237,8 @@ if (
         message = st.chat_input("Ask anything about your file...")
 
         if message:
-            if re.match(API_KEY_pattern, st.session_state["api_key"]) and re.match(
-                Model_pattern, st.session_state["openai_model"]
+            if re.match(API_KEY_PATTERN, st.session_state["api_key"]) and re.match(
+                MODEL_PATTERN, st.session_state["openai_model"]
             ):
                 send_message(message, "human")
                 chain = (
