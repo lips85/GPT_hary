@@ -22,6 +22,21 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+# 세션 상태 초기화
+for key, default in [
+    ("messages", []),
+    ("api_key", None),
+    ("api_key_check", False),
+    ("openai_model", "선택해주세요"),
+    ("openai_model_check", False),
+    ("url", None),
+    ("url_check", False),
+    ("url_name", None),
+]:
+    if key not in st.session_state:
+        st.session_state[key] = default
+
+
 st.set_page_config(
     page_title="SiteGPT",
     page_icon="🖥️",
@@ -41,20 +56,6 @@ if not (st.session_state["api_key_check"] and st.session_state["openai_model_che
         왼쪽 사이드바에 사이트를 추가해 보세요!!
     """
     )
-
-# 세션 상태 초기화
-for key, default in [
-    ("messages", []),
-    ("api_key", None),
-    ("api_key_check", False),
-    ("openai_model", "선택해주세요"),
-    ("openai_model_check", False),
-    ("url", None),
-    ("url_check", False),
-    ("url_name", None),
-]:
-    if key not in st.session_state:
-        st.session_state[key] = default
 
 
 # 콜백 핸들러 클래스 정의
