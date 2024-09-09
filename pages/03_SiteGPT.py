@@ -13,6 +13,7 @@ from langchain.embeddings.cache import CacheBackedEmbeddings
 from langchain.storage import LocalFileStore
 from langchain.memory.buffer import ConversationBufferMemory
 
+
 # 클라우드페어 공식문서 사이트맵?
 # https://developers.cloudflare.com/sitemap.xml
 # https://developers.cloudflare.com/sitemap-0.xml
@@ -41,6 +42,9 @@ for key, default in [
     ("api_key_check", False),
     ("openai_model", "선택해주세요"),
     ("openai_model_check", False),
+    ("url", None),
+    ("url_check", False),
+    ("url_name", None),
 ]:
     if key not in st.session_state:
         st.session_state[key] = default
@@ -111,6 +115,64 @@ def save_openai_model():
     st.session_state["openai_model_check"] = (
         st.session_state["openai_model"] != "선택해주세요"
     )
+
+
+# url 저장 함수
+def save_url():
+    if st.session_state["url"] != "":
+        st.session_state["url_check"] = True
+        st.session_state["url_name"] = (
+            st.session_state["url"].split("://")[1].replace("/", "_")
+            if st.session_state["url"]
+            else None
+        )
+    else:
+        st.session_state["url_check"] = False
+
+
+# 디버깅용 지우는 함수
+def my_api_key():
+    st.session_state["api_key"] = os.environ["OPENAI_API_KEY"]
+    st.session_state["api_key_check"] = True
+
+
+# 디버깅용 지우는 함수
+def my_url():
+    st.session_state["url"] = os.environ.get(
+        "CLAUDEFLARE_SITEMAP_URL", "https://developers.cloudflare.com/sitemap-0.xml"
+    )
+    st.session_state["url_check"] = True
+
+
+# 웹사이트 로딩 및 벡터 저장소 생성 함수
+@st.cache_resource(show_spinner="Loading website...")
+def load_website(url):
+    os.makedirs("./.cache/sitemap", exist_ok=True)
+    cache_dir = LocalFileStore(
+        f"./.cache/sitemap/embeddings/{st.session_state['url_name']}"
+    )
+    splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+        chunk_size=1000,
+        chunk_overlap=200,
+    )
+    loader = SitemapLoader(
+        url,
+        parsing_function=parse_page,
+        filter_urls=[
+            r"https:\/\/developers.cloudflare.com/ai-gateway.*",
+            r"https:\/\/developers.cloudflare.com/vectorize.*",
+            r"https:\/\/developers.cloudflare.com/workers-ai.*",
+        ],
+    )
+    loader.requests_per_second = 50
+    docs = loader.load_and_split(text_splitter=splitter)
+    embeddings = OpenAIEmbeddings(
+        openai_api_key=st.session_state["api_key"],
+    )
+    cached_embeddings = CacheBackedEmbeddings.from_bytes_store(embeddings, cache_dir)
+    vectorstore = FAISS.from_documents(docs, cached_embeddings)
+    retriever = vectorstore.as_retriever()
+    return retriever
 
 
 def get_answers(inputs):
@@ -259,47 +321,25 @@ memory = ConversationBufferMemory(
 )
 
 
-# 웹사이트 로딩 및 벡터 저장소 생성 함수
-@st.cache_resource(show_spinner="Loading website...")
-def load_website(url):
-    os.makedirs("./.cache/sitemap", exist_ok=True)
-    cache_dir = LocalFileStore(f"./.cache/sitemap/embeddings/{url_name}")
-    splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-        chunk_size=1000,
-        chunk_overlap=200,
-    )
-    loader = SitemapLoader(
-        url,
-        parsing_function=parse_page,
-        filter_urls=[
-            r"https:\/\/developers.cloudflare.com/ai-gateway.*",
-            r"https:\/\/developers.cloudflare.com/vectorize.*",
-            r"https:\/\/developers.cloudflare.com/workers-ai.*",
-        ],
-    )
-    loader.requests_per_second = 50
-    docs = loader.load_and_split(text_splitter=splitter)
-    embeddings = OpenAIEmbeddings(
-        openai_api_key=st.session_state["api_key"],
-    )
-    cached_embeddings = CacheBackedEmbeddings.from_bytes_store(embeddings, cache_dir)
-    vectorstore = FAISS.from_documents(docs, cached_embeddings)
-    retriever = vectorstore.as_retriever()
-    return retriever
-
-
 with st.sidebar:
     st.text_input(
         "API_KEY 입력",
         placeholder="sk-...",
         on_change=save_api_key,
         key="api_key",
+        type="password",
     )
 
     if st.session_state["api_key_check"]:
         st.success("😄API_KEY가 저장되었습니다.😄")
     else:
         st.warning("API_KEY를 넣어주세요.")
+
+    st.button(
+        "API_KEY 저장",
+        on_click=my_api_key,
+        key="my_key_button",
+    )
 
     st.divider()
 
@@ -316,11 +356,23 @@ with st.sidebar:
         st.warning("모델을 선택해주세요.")
 
     st.divider()
-    url = st.text_input(
-        "Write down a URL", placeholder="https://example.com/sitemap.xml", key=""
+    st.text_input(
+        "Write down a URL",
+        placeholder="https://example.com/sitemap.xml",
+        key="url",
+        on_change=save_url,
     )
 
-    url_name = url.split("://")[1].replace("/", "_") if url else None
+    if st.session_state["url_check"]:
+        st.success("😄URL이 저장되었습니다.😄")
+    else:
+        st.warning("URL을 넣어주세요.")
+
+    st.button(
+        "url 저장",
+        on_click=my_url,
+        key="my_url_button",
+    )
 
     st.write(
         """
@@ -335,25 +387,27 @@ with st.sidebar:
     )
 
 
-if not st.session_state["api_key"]:
-    st.warning("Please provide an **:blue[OpenAI API Key]** on the sidebar.")
-
-if st.session_state["openai_model"] == "선택해주세요":
-    st.warning("Please write down a **:blue[OpenAI Model Select]** on the sidebar.")
-
-if not url:
-    st.warning("Please write down a **:blue[Sitemap URL]** on the sidebar.")
-
-
-if (st.session_state["api_key_check"] is True) and (
-    st.session_state["api_key"] is not None
+if not (
+    st.session_state["api_key_check"]
+    and st.session_state["openai_model_check"]
+    and st.session_state["url_check"]
 ):
-    if url:
-        if ".xml" not in url:
+
+    if not st.session_state["api_key_check"]:
+        st.warning("Please provide an **:blue[OpenAI API Key]** on the sidebar.")
+
+    if not st.session_state["openai_model_check"]:
+        st.warning("Please write down a **:blue[OpenAI Model Select]** on the sidebar.")
+
+    if not st.session_state["url_check"]:
+        st.warning("Please write down a **:blue[Sitemap URL]** on the sidebar.")
+else:
+    if st.session_state["url_check"]:
+        if ".xml" not in st.session_state["url"]:
             with st.sidebar:
                 st.error("Please write down a Sitemap URL.")
         else:
-            retriever = load_website(url)
+            retriever = load_website(st.session_state["url"])
             send_message("I'm ready! Ask away!", "ai", save=False)
             paint_history()
             message = st.chat_input("Ask a question to the website.")
