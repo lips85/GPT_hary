@@ -46,14 +46,15 @@ for key, default in [
         st.session_state[key] = default
 
 
+# API 키 패턴과 모델 패턴 정의
 API_KEY_pattern = r"sk-.*"
-
 Model_pattern = r"gpt-*"
 
+# 사용 가능한 OpenAI 모델 목록
 openai_models = ["선택해주세요", "gpt-4o-mini-2024-07-18", "gpt-4o-2024-08-06"]
 
 
-# 콜백 핸들러 클래스
+# 콜백 핸들러 클래스 정의
 class ChatCallbackHandler(BaseCallbackHandler):
     def __init__(self):
         self.message = ""
@@ -139,6 +140,7 @@ def get_answers(inputs):
     }
 
 
+# 최적의 답변 선택 함수
 def choose_answer(inputs):
     answers = inputs["answers"]
     question = inputs["question"]
@@ -157,6 +159,7 @@ def choose_answer(inputs):
     )
 
 
+# HTML 페이지 파싱 함수
 def parse_page(soup):
     header = soup.find("header")
     footer = soup.find("footer")
@@ -172,10 +175,12 @@ def parse_page(soup):
     )
 
 
+# 메모리에서 대화 기록 로드 함수
 def load_memory(_):
     return memory.load_memory_variables({})["history"]
 
 
+# 답변 생성을 위한 프롬프트 템플릿
 answers_prompt = ChatPromptTemplate.from_template(
     """
     Using ONLY the following context answer the user's question. If you can't just say you don't know, don't make anything up.
@@ -206,6 +211,7 @@ answers_prompt = ChatPromptTemplate.from_template(
 )
 
 
+# 최종 답변 선택을 위한 프롬프트 템플릿
 choose_prompt = ChatPromptTemplate.from_messages(
     [
         (
@@ -226,6 +232,7 @@ choose_prompt = ChatPromptTemplate.from_messages(
 )
 
 
+# 최종 답변 생성을 위한 LLM 모델 설정
 llm_for_last = ChatOpenAI(
     temperature=0.1,
     streaming=True,
@@ -235,12 +242,15 @@ llm_for_last = ChatOpenAI(
     model=st.session_state["openai_model"],
     openai_api_key=st.session_state["api_key"],
 )
+
+# 답변 생성을 위한 LLM 모델 설정
 llm = ChatOpenAI(
     temperature=0.1,
     model=st.session_state["openai_model"],
     openai_api_key=st.session_state["api_key"],
 )
 
+# 대화 기록을 저장하기 위한 메모리 설정
 memory = ConversationBufferMemory(
     llm=llm,
     max_token_limit=1000,
@@ -249,6 +259,7 @@ memory = ConversationBufferMemory(
 )
 
 
+# 웹사이트 로딩 및 벡터 저장소 생성 함수
 @st.cache_resource(show_spinner="Loading website...")
 def load_website(url):
     os.makedirs("./.cache/sitemap", exist_ok=True)
