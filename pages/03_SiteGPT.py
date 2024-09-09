@@ -28,6 +28,9 @@ st.set_page_config(
     layout="wide",
 )
 
+# 페이지 제목 및 설명
+st.title("SiteGPT 🖥️")
+
 if not (st.session_state["api_key_check"] and st.session_state["openai_model_check"]):
     st.markdown(
         """
