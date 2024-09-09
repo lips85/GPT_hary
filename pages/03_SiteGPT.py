@@ -336,7 +336,7 @@ with st.sidebar:
         st.warning("API_KEY를 넣어주세요.")
 
     st.button(
-        "API_KEY 저장",
+        "hary의 API_KEY (디버그용)",
         on_click=my_api_key,
         key="my_key_button",
     )
@@ -369,7 +369,7 @@ with st.sidebar:
         st.warning("URL을 넣어주세요.")
 
     st.button(
-        "url 저장",
+        "디버그용 url",
         on_click=my_url,
         key="my_url_button",
     )
