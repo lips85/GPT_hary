@@ -23,3 +23,16 @@
 - [x] 과제 강의 듣기
 - [x] 과제 완료하기
 - [x] 코드리뷰하기
+
+## [Assignment 5 : DocumentGPT](https://github.com/lips85/GPT_hary/blob/main/pages/01_DocumentGPT_Assign15.py)
+
+- [x] 과제 완료하기
+- [x] 코드리뷰하기
+
+## [Assignment 6 : DocumentGPT](https://github.com/lips85/GPT_hary/blob/main/pages/02_QuizGPT.py)
+
+- [x] 과제 완료하기
+
+## [Assignment 7 : SiteGPT](https://github.com/lips85/GPT_hary/blob/main/pages/03_SiteGPT.py)
+
+- [x] 과제 완료하기
