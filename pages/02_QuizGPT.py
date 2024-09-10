@@ -1,6 +1,5 @@
 import json
 import streamlit as st
-import re
 import os
 
 from langchain.chat_models import ChatOpenAI
@@ -9,8 +8,10 @@ from langchain.document_loaders import UnstructuredFileLoader
 from langchain.retrievers import WikipediaRetriever
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
+from utils.functions.save_env import SaveEnv
+
 # 파일 분리 (상수들)
-from utils.constant.constant import OPENAI_MODEL, API_KEY_PATTERN
+from utils.constant.constant import OPENAI_MODEL
 
 
 st.set_page_config(
@@ -29,19 +30,6 @@ for key, default in [
 ]:
     if key not in st.session_state:
         st.session_state[key] = default
-
-
-# API 키 저장 함수
-def save_api_key():
-    if re.match(API_KEY_PATTERN, st.session_state["api_key"]):
-        st.session_state["api_key_check"] = True
-
-
-# OpenAI 모델 저장 함수
-def save_openai_model():
-    st.session_state["openai_model_check"] = (
-        st.session_state["openai_model"] != "선택해주세요"
-    )
 
 
 def set_quiz_submitted(value: bool):
@@ -130,7 +118,7 @@ with st.sidebar:
     st.text_input(
         "API_KEY 입력",
         placeholder="sk-...",
-        on_change=save_api_key,
+        on_change=SaveEnv.save_api_key,
         key="api_key",
     )
 
@@ -142,7 +130,7 @@ with st.sidebar:
     st.selectbox(
         "OpenAI Model을 골라주세요.",
         options=OPENAI_MODEL,
-        on_change=save_openai_model,
+        on_change=SaveEnv.save_openai_model,
         key="openai_model",
     )
 

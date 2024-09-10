@@ -11,10 +11,14 @@ from langchain.vectorstores.faiss import FAISS
 from langchain.storage import LocalFileStore
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema.runnable import RunnablePassthrough, RunnableLambda
-from langchain.callbacks.base import BaseCallbackHandler
+
 
 # 파일 분리 (상수들)
 from utils.constant.constant import OPENAI_MODEL, API_KEY_PATTERN, MODEL_PATTERN
+
+# 파일 분리 (함수들)
+from utils.functions.save_env import SaveEnv
+from utils.functions.chat import ChatMemory, ChatCallbackHandler
 
 # Streamlit 페이지 설정
 st.set_page_config(
@@ -68,23 +72,6 @@ else:
     st.success("😄API_KEY와 모델이 저장되었습니다.😄")
 
 
-# 콜백 핸들러 클래스
-class ChatCallbackHandler(BaseCallbackHandler):
-    def __init__(self):
-        self.message = ""
-        self.message_box = None
-
-    def on_llm_start(self, *args, **kwargs):
-        self.message_box = st.empty()
-
-    def on_llm_end(self, *args, **kwargs):
-        save_message(self.message, "ai")
-
-    def on_llm_new_token(self, token, *args, **kwargs):
-        self.message += token
-        self.message_box.markdown(self.message)
-
-
 # 파일 임베딩 함수
 @st.cache_resource(show_spinner="Embedding file...")
 def embed_file(file):
@@ -107,46 +94,9 @@ def embed_file(file):
     return vectorstore.as_retriever()
 
 
-# 파일 업로드 체크 함수
-def save_file():
-    st.session_state["file_check"] = st.session_state.file is not None
-
-
-# 메시지 저장 함수
-def save_message(message, role):
-    st.session_state["messages"].append({"message": message, "role": role})
-
-
-# 메시지 전송 함수
-def send_message(message, role, save=True):
-    with st.chat_message(role):
-        st.markdown(message)
-    if save:
-        save_message(message, role)
-
-
-# 채팅 기록 표시 함수
-def paint_history():
-    for message in st.session_state["messages"]:
-        send_message(message["message"], message["role"], save=False)
-
-
 # 문서 포맷팅 함수
 def format_docs(docs):
     return "\n\n".join(document.page_content for document in docs)
-
-
-# API 키 저장 함수
-def save_api_key():
-    if re.match(API_KEY_PATTERN, st.session_state["api_key"]):
-        st.session_state["api_key_check"] = True
-
-
-# OpenAI 모델 저장 함수
-def save_openai_model():
-    st.session_state["openai_model_check"] = (
-        st.session_state["openai_model"] != "선택해주세요"
-    )
 
 
 # 사이드바 설정
@@ -154,7 +104,7 @@ with st.sidebar:
     st.file_uploader(
         "Upload a .txt .pdf or .docx file",
         type=["pdf", "txt", "docx"],
-        on_change=save_file,
+        on_change=SaveEnv.save_file,
         key="file",
     )
     if st.session_state["file_check"]:
@@ -165,7 +115,7 @@ with st.sidebar:
     st.text_input(
         "API_KEY 입력",
         placeholder="sk-...",
-        on_change=save_api_key,
+        on_change=SaveEnv.save_api_key,
         key="api_key",
     )
 
@@ -177,7 +127,7 @@ with st.sidebar:
     st.selectbox(
         "OpenAI Model을 골라주세요.",
         options=OPENAI_MODEL,
-        on_change=save_openai_model,
+        on_change=SaveEnv.save_openai_model,
         key="openai_model",
     )
 
@@ -232,15 +182,15 @@ if (
         embed_file(st.session_state["file"]) if st.session_state["file_check"] else None
     )
     if retriever:
-        send_message("I'm ready! Ask away!", "ai", save=False)
-        paint_history()
+        ChatMemory.send_message("I'm ready! Ask away!", "ai", save=False)
+        ChatMemory.paint_history()
         message = st.chat_input("Ask anything about your file...")
 
         if message:
             if re.match(API_KEY_PATTERN, st.session_state["api_key"]) and re.match(
                 MODEL_PATTERN, st.session_state["openai_model"]
             ):
-                send_message(message, "human")
+                ChatMemory.send_message(message, "human")
                 chain = (
                     {
                         "context": retriever | RunnableLambda(format_docs),
@@ -256,7 +206,7 @@ if (
                     st.error(f"An error occurred: {e}")
                     st.warning("OPENAI_API_KEY or 모델 선택을 다시 진행해주세요.")
             else:
-                send_message(
+                ChatMemory.send_message(
                     "OPENAI_API_KEY or 모델 선택이 잘못되었습니다. 사이드바를 다시 확인하세요.",
                     "ai",
                 )
