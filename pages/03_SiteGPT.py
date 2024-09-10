@@ -65,11 +65,6 @@ if not (
     )
 
 
-# 문서 포맷�� 함수
-def format_docs(docs):
-    return "\n\n".join(document.page_content for document in docs)
-
-
 # 디버깅용 지우는 함수
 class Debug:
     @staticmethod
@@ -114,6 +109,11 @@ def load_website(url):
     vectorstore = FAISS.from_documents(docs, cached_embeddings)
     retriever = vectorstore.as_retriever()
     return retriever
+
+
+# 문서 포맷�� 함수
+def format_docs(docs):
+    return "\n\n".join(document.page_content for document in docs)
 
 
 def get_answers(inputs):

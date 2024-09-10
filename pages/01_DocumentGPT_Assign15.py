@@ -72,31 +72,35 @@ else:
     st.success("😄API_KEY와 모델이 저장되었습니다.😄")
 
 
-# 파일 임베딩 함수
-@st.cache_resource(show_spinner="Embedding file...")
-def embed_file(file):
-    os.makedirs("./.cache/files", exist_ok=True)
-    file_path = f"./.cache/files/{file.name}"
-    with open(file_path, "wb") as f:
-        f.write(file.read())
+class FileController:
+    # 파일 임베딩 함수
+    @staticmethod
+    @st.cache_resource(show_spinner="Embedding file...")
+    def embed_file(file):
+        os.makedirs("./.cache/files", exist_ok=True)
+        file_path = f"./.cache/files/{file.name}"
+        with open(file_path, "wb") as f:
+            f.write(file.read())
 
-    cache_dir = LocalFileStore(f"./.cache/embeddings/open_ai/{file.name}")
-    splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-        separators=["\n\n", ".", "?", "!"],
-        chunk_size=1000,
-        chunk_overlap=100,
-    )
-    loader = UnstructuredFileLoader(file_path)
-    docs = loader.load_and_split(text_splitter=splitter)
-    embeddings = OpenAIEmbeddings(openai_api_key=st.session_state["api_key"])
-    cached_embeddings = CacheBackedEmbeddings.from_bytes_store(embeddings, cache_dir)
-    vectorstore = FAISS.from_documents(docs, cached_embeddings)
-    return vectorstore.as_retriever()
+        cache_dir = LocalFileStore(f"./.cache/embeddings/open_ai/{file.name}")
+        splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+            separators=["\n\n", ".", "?", "!"],
+            chunk_size=1000,
+            chunk_overlap=100,
+        )
+        loader = UnstructuredFileLoader(file_path)
+        docs = loader.load_and_split(text_splitter=splitter)
+        embeddings = OpenAIEmbeddings(openai_api_key=st.session_state["api_key"])
+        cached_embeddings = CacheBackedEmbeddings.from_bytes_store(
+            embeddings, cache_dir
+        )
+        vectorstore = FAISS.from_documents(docs, cached_embeddings)
+        return vectorstore.as_retriever()
 
-
-# 문서 포맷팅 함수
-def format_docs(docs):
-    return "\n\n".join(document.page_content for document in docs)
+    # 문서 포맷팅 함수
+    @staticmethod
+    def format_docs(docs):
+        return "\n\n".join(document.page_content for document in docs)
 
 
 # 사이드바 설정
@@ -179,7 +183,9 @@ if (
     )
 
     retriever = (
-        embed_file(st.session_state["file"]) if st.session_state["file_check"] else None
+        FileController.embed_file(st.session_state["file"])
+        if st.session_state["file_check"]
+        else None
     )
     if retriever:
         ChatMemory.send_message("I'm ready! Ask away!", "ai", save=False)
@@ -193,7 +199,8 @@ if (
                 ChatMemory.send_message(message, "human")
                 chain = (
                     {
-                        "context": retriever | RunnableLambda(format_docs),
+                        "context": retriever
+                        | RunnableLambda(FileController.format_docs),
                         "question": RunnablePassthrough(),
                     }
                     | prompt
