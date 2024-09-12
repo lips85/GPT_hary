@@ -38,7 +38,7 @@ debugpy==1.8.0
 decorator==5.1.1
 dill==0.3.7
 dnspython==2.4.2
-duckduckgo-search==3.8.5
+duckduckgo_search==6.2.11
 EbookLib==0.18
 effdet==0.4.1
 elastic-transport==8.4.0
@@ -113,7 +113,7 @@ nest-asyncio==1.5.8
 networkx==3.1
 nltk==3.8.1
 numexpr==2.8.5
-numpy==1.25.2
+numpy==1.26.0
 olefile==0.46
 omegaconf==2.3.0
 onnx==1.14.1
@@ -140,6 +140,7 @@ playwright==1.39.0
 portalocker==2.8.2
 posthog==3.0.2
 preshed==3.0.9
+primp==0.6.1
 prompt-toolkit==3.0.39
 protobuf==4.24.3
 psutil==5.9.5
@@ -228,7 +229,7 @@ unstructured-inference==0.6.6
 unstructured.pytesseract==0.3.12
 urllib3==1.26.16
 uvicorn==0.23.2
-uvloop==0.20.0
+uvloop==0.19.0
 validators==0.22.0
 wasabi==1.1.2
 watchdog==3.0.0

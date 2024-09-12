@@ -1,0 +1,11 @@
+Research about the XZ backdoor:
+
+In February 2024, a malicious backdoor was introduced to the Linux utility xz within the liblzma library in versions 5.6.0 and 5.6.1 by an account using the name "Jia Tan". The backdoor gives an attacker who possesses a specific Ed448 private key remote code execution capabilities on the affected Linux system. The issue has been given the Common Vulnerabilities and Exposures number CVE-2024-3094 and has been assigned a CVSS score of 10.0, the highest possible score.
+
+While xz is commonly present in most Linux distributions, at the time of discovery the backdoored version had not yet been widely deployed to production systems, but was present in development versions of major distributions. The backdoor was discovered by the software developer Andres Freund, who announced his findings on 29 March 2024.
+
+Additionally, the attacker, using the name "Jia Tan", issued commits for versions 5.6.0 and 5.6.1 of XZ Utils, implementing the backdoor. The commits were made in a time zone corresponding to East Asia, raising suspicions about the attacker's origin.
+
+The XZ utility is a popular open-source lossless compression utility that is preinstalled with major Linux distributions, including Debian, Ubuntu, Fedora, and Arch Linux. The implications of this backdoor are significant, especially for open-networked environments such as high-performance computing systems, where login nodes are particularly vulnerable.
+
+This incident highlights the risks associated with supply chain attacks in the software development process, where malicious code can be introduced into widely used software components.
