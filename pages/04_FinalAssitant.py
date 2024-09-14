@@ -10,20 +10,20 @@
 # 유저가 자체 OpenAI API 키를 사용하도록 허용하고, st.sidebar 내부의 st.input에서 이를 로드합니다.
 # st.sidebar를 사용하여 Streamlit app 의 코드과 함께 깃허브 리포지토리에 링크를 넣습니다.
 
-import re
 import time
 import json
 import streamlit as st
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.document_loaders.web_base import WebBaseLoader
-from openai import OpenAI
+
+from langchain.chat_models import ChatOpenAI
+
 # 파일 분리 (상수들)
-from utils.constant.constant import OPENAI_MODEL, API_KEY_PATTERN, MODEL_PATTERN
+from utils.constant.constant import OPENAI_MODEL
 
 # 파일 분리 (함수들)
 from utils.functions.save_env import SaveEnv
-from utils.functions.chat import ChatMemory, ChatCallbackHandler
 
 # 세션 상태 초기화
 for key, default in [
@@ -51,6 +51,7 @@ st.markdown(
     (OpenAI Assistant APi 사용)
  """
 )
+
 
 class DiscussionClient:
 
@@ -260,7 +261,11 @@ if st.session_state["openai_model"] == "선택해주세요":
     st.warning("Please write down a **:blue[OpenAI Model Select]** on the sidebar.")
 
 if st.session_state["api_key"] and (st.session_state["openai_model"] != "선택해주세요"):
-    client = OpenAI(api_key=st.session_state["api_key"])
+    client = ChatOpenAI(
+        temperature=0.1,
+        api_key=st.session_state["api_key"],
+        model=st.session_state["openai_model"],
+    )
 
     assistant_id = "asst_kV62UlOmxZsV9WcJE3Npy8t1"
 
