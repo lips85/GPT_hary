@@ -3,6 +3,9 @@ from langchain.callbacks.base import BaseCallbackHandler
 
 
 class ChatMemory:
+    def __init__(self):
+        pass
+
     @staticmethod
     def save_message(message, role):
         st.session_state["messages"].append({"message": message, "role": role})

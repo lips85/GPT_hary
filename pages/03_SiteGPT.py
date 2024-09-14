@@ -17,6 +17,7 @@ from utils.constant.constant import OPENAI_MODEL, API_KEY_PATTERN, MODEL_PATTERN
 
 # 파일 분리 (함수들)
 from utils.functions.chat import ChatMemory, ChatCallbackHandler
+from utils.functions.debug import Debug
 from utils.functions.save_env import SaveEnv
 
 # 디버그용
@@ -56,28 +57,11 @@ if not (
 ):
     st.markdown(
         """
-        # SiteGPT
-
         사이트에 대해 질문해 보세요!!
 
         왼쪽 사이드바에 사이트를 추가해 보세요!!
-    """
+        """
     )
-
-
-# 디버깅용 지우는 함수
-class Debug:
-    @staticmethod
-    def my_api_key():
-        st.session_state["api_key"] = os.environ["OPENAI_API_KEY"]
-        st.session_state["api_key_check"] = True
-
-    @staticmethod
-    def my_url():
-        st.session_state["url"] = os.environ.get(
-            "CLAUDEFLARE_SITEMAP_URL", "https://developers.cloudflare.com/sitemap-0.xml"
-        )
-        st.session_state["url_check"] = True
 
 
 # 웹사이트 로딩 및 벡터 저장소 생성 함수

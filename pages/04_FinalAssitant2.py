@@ -16,13 +16,17 @@ import streamlit as st
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.document_loaders.web_base import WebBaseLoader
+from langchain.chat_models import ChatOpenAI
+from langchain.memory import ConversationBufferMemory
 
-import openai
+from openai import OpenAI
 
 # 파일 분리 (상수들)
 from utils.constant.constant import OPENAI_MODEL
 
 # 파일 분리 (함수들)
+from utils.functions.chat import ChatMemory, ChatCallbackHandler
+from utils.functions.debug import Debug
 from utils.functions.save_env import SaveEnv
 
 # 디버그용
@@ -42,7 +46,6 @@ for key, default in [
     if key not in st.session_state:
         st.session_state[key] = default
 
-
 st.set_page_config(
     page_title="AssistantGPT",
     page_icon="🚀",
@@ -52,32 +55,14 @@ st.set_page_config(
 # 페이지 제목 및 설명
 st.title("🚀 리서치 마스터  🚀")
 
-st.markdown(
-    """
-    검색은 저에게 맡겨주세요! 여러분들의 시간을 아껴드리겠습니다.
-    (OpenAI Assistant APi 사용)
- """
-)
 
-
-class DiscussionClient:
-
-    def __init__(self):
-        pass
-
-    def save_message(self, message, role):
-        st.session_state["messages"].append({"message": message, "role": role})
-
-    def send_message(self, message, role, save=True):
-        with st.chat_message(role):
-            st.markdown(message)
-
-        if save:
-            self.save_message(message, role)
-
-    def paint_history(self):
-        for message in st.session_state["messages"]:
-            self.send_message(message["message"], message["role"], save=False)
+if not (st.session_state["api_key_check"] and st.session_state["openai_model_check"]):
+    st.markdown(
+        """
+        검색은 저에게 맡겨주세요! 여러분들의 시간을 아껴드리겠습니다.
+        (OpenAI Assistant APi 사용)
+        """
+    )
 
 
 class ThreadClient:
@@ -162,7 +147,7 @@ class IssueSearchClient:
 
 
 issue_search_client = IssueSearchClient()
-discussion_client = DiscussionClient()
+discussion_client = ChatMemory()
 
 functions_map = {
     "get_websites_by_wikipedia_search": issue_search_client.get_websites_by_wikipedia_search,
@@ -230,12 +215,21 @@ with st.sidebar:
         placeholder="sk-...",
         on_change=SaveEnv.save_api_key,
         key="api_key",
+        type="password",
     )
 
     if st.session_state["api_key_check"]:
         st.success("😄API_KEY가 저장되었습니다.😄")
     else:
         st.warning("API_KEY를 넣어주세요.")
+
+    st.button(
+        "hary의 API_KEY (디버그용)",
+        on_click=Debug.my_api_key,
+        key="my_key_button",
+    )
+
+    st.divider()
 
     st.selectbox(
         "OpenAI Model을 골라주세요.",
@@ -249,6 +243,8 @@ with st.sidebar:
     else:
         st.warning("모델을 선택해주세요.")
 
+    st.divider()
+
     st.write(
         """
         Made by hary.
@@ -261,14 +257,35 @@ with st.sidebar:
         """
     )
 
-if not st.session_state["api_key"]:
-    st.warning("Please provide an **:blue[OpenAI API Key]** on the sidebar.")
+# 답변 생성을 위한 LLM 모델 설정
+llm = ChatOpenAI(
+    temperature=0.1,
+    model=st.session_state["openai_model"],
+    openai_api_key=st.session_state["api_key"],
+)
 
-if st.session_state["openai_model"] == "선택해주세요":
-    st.warning("Please write down a **:blue[OpenAI Model Select]** on the sidebar.")
+# 대화 기록을 저장하기 위한 메모리 설정
+memory = ConversationBufferMemory(
+    llm=llm,
+    streaming=True,
+    callbacks={
+        ChatCallbackHandler(),
+    },
+    max_token_limit=1000,
+    return_messages=True,
+    memory_key="history",
+)
 
-if st.session_state["api_key"] and (st.session_state["openai_model"] != "선택해주세요"):
-    client = openai(
+if not (st.session_state["api_key_check"] and st.session_state["openai_model_check"]):
+
+    if not st.session_state["api_key_check"]:
+        st.warning("Please provide an **:blue[OpenAI API Key]** on the sidebar.")
+
+    if not st.session_state["openai_model_check"]:
+        st.warning("Please write down a **:blue[OpenAI Model Select]** on the sidebar.")
+
+else:
+    client = OpenAI(
         api_key=st.session_state["api_key"],
     )
 
