@@ -16,17 +16,17 @@ import streamlit as st
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.document_loaders.web_base import WebBaseLoader
-from langchain.chat_models import ChatOpenAI
-from langchain.memory import ConversationBufferMemory
 
+
+import openai as client
 from openai import OpenAI
 
 # 파일 분리 (상수들)
 from utils.constant.constant import OPENAI_MODEL
+from utils.functions.debug import Debug
 
 # 파일 분리 (함수들)
-from utils.functions.chat import ChatMemory, ChatCallbackHandler
-from utils.functions.debug import Debug
+from utils.functions.chat import ChatMemory
 from utils.functions.save_env import SaveEnv
 
 # 디버그용
@@ -46,6 +46,7 @@ for key, default in [
     if key not in st.session_state:
         st.session_state[key] = default
 
+
 st.set_page_config(
     page_title="AssistantGPT",
     page_icon="🚀",
@@ -55,14 +56,12 @@ st.set_page_config(
 # 페이지 제목 및 설명
 st.title("🚀 리서치 마스터  🚀")
 
-
-if not (st.session_state["api_key_check"] and st.session_state["openai_model_check"]):
-    st.markdown(
-        """
-        검색은 저에게 맡겨주세요! 여러분들의 시간을 아껴드리겠습니다.
-        (OpenAI Assistant APi 사용)
-        """
-    )
+st.markdown(
+    """
+    검색은 저에게 맡겨주세요! 여러분들의 시간을 아껴드리겠습니다.
+    (OpenAI Assistant APi 사용)
+ """
+)
 
 
 class ThreadClient:
@@ -257,25 +256,6 @@ with st.sidebar:
         """
     )
 
-# 답변 생성을 위한 LLM 모델 설정
-llm = ChatOpenAI(
-    temperature=0.1,
-    model=st.session_state["openai_model"],
-    openai_api_key=st.session_state["api_key"],
-)
-
-# 대화 기록을 저장하기 위한 메모리 설정
-memory = ConversationBufferMemory(
-    llm=llm,
-    streaming=True,
-    callbacks={
-        ChatCallbackHandler(),
-    },
-    max_token_limit=1000,
-    return_messages=True,
-    memory_key="history",
-)
-
 if not (st.session_state["api_key_check"] and st.session_state["openai_model_check"]):
 
     if not st.session_state["api_key_check"]:
@@ -289,7 +269,7 @@ else:
         api_key=st.session_state["api_key"],
     )
 
-    assistant_id = "asst_kV62UlOmxZsV9WcJE3Npy8t1"
+    assistant_id = "asst_j9wH31CKrnzEHE8lYR54LdoQ"
 
     discussion_client.send_message("무엇이든 물어보세요!", "ai", save=False)
     discussion_client.paint_history()

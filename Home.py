@@ -18,9 +18,7 @@ Here are the apps I made:
 
 ## [3. SiteGPT](/SiteGPT)
 
-## [4. Final Assistant2](/FinalAssitant2)
-
-## [5. InvestGPT](/InvestGPT)
+## [4. Final Assistant](/FinalAssitant)
 
 """
 )

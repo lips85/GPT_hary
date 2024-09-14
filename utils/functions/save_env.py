@@ -4,24 +4,23 @@ from utils.constant.constant import API_KEY_PATTERN
 
 
 class SaveEnv:
-    @staticmethod
-    def save_api_key():
+    def __init__(self):
+        pass
+
+    def save_api_key(self):
         st.session_state["api_key_check"] = bool(
             re.match(API_KEY_PATTERN, st.session_state["api_key"])
         )
 
-    @staticmethod
-    def save_file():
+    def save_file(self):
         st.session_state["file_check"] = st.session_state.file is not None
 
-    @staticmethod
-    def save_openai_model():
+    def save_openai_model(self):
         st.session_state["openai_model_check"] = (
             st.session_state["openai_model"] != "선택해주세요"
         )
 
-    @staticmethod
-    def save_url():
+    def save_url(self):
         if st.session_state["url"]:
             st.session_state["url_check"] = True
             st.session_state["url_name"] = (
