@@ -3,23 +3,21 @@ from langchain.callbacks.base import BaseCallbackHandler
 
 
 class ChatMemory:
-    def __init__(self):
-        pass
-
-    def save_message(self, message, role):
+    @staticmethod
+    def save_message(message, role):
         st.session_state["messages"].append({"message": message, "role": role})
 
-    # 메시지 전송 함수
-    def send_message(self, message, role, save=True):
+    @staticmethod
+    def send_message(message, role, save=True):
         with st.chat_message(role):
             st.markdown(message)
         if save:
-            self.save_message(message, role)
+            ChatMemory.save_message(message, role)
 
-    # 채팅 기록 표시 함수
-    def paint_history(self):
+    @staticmethod
+    def paint_history():
         for message in st.session_state["messages"]:
-            self.send_message(message["message"], message["role"], save=False)
+            ChatMemory.send_message(message["message"], message["role"], save=False)
 
 
 # 콜백 핸들러 클래스 정의
