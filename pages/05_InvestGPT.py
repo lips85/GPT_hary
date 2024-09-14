@@ -12,7 +12,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-llm = ChatOpenAI(temperature=0.1, model_name="gpt-3.5-turbo-0125")
+llm = ChatOpenAI(
+    temperature=0.1,
+    model_name="gpt-4o-mini-2024-07-18",
+)
 
 alpha_vantage_api_key = os.environ.get("ALPHA_VANTAGE_API_KEY")
 
