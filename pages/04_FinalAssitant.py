@@ -131,9 +131,9 @@ class IssueSearchClient:
 
     def save_file(self, inputs):
         text = inputs["text"]
-        with open("research_report.txt", "w", encoding="utf-8") as f:
+        with open("final_result.txt", "w", encoding="utf-8") as f:
             f.write(text)
-        st.download_button(label="다운로드", file_name="research_report.txt", data=text)
+        st.download_button(label="다운로드", file_name="final_result.txt", data=text)
         return "저장 완료"
 
 
@@ -232,6 +232,8 @@ def get_assistant(client):
 
         링크는 맨 마지막에 포함되어야 합니다.
         모든 응답은 한국어로 작성하세요.
+
+        최종 결과는 텍스트 파일로 저장되어야 합니다.
         """,
         model="gpt-4o-mini-2024-07-18",
         temperature=0.1,
