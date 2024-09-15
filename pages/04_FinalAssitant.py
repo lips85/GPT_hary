@@ -223,14 +223,16 @@ functions = [
 def get_assistant(client):
     assistant = client.beta.assistants.create(
         name="리서치 어시스턴트",
-        instructions=(
-            "당신은 fuctions를 이용하여 사용자가 원하는 키워드를 검색, 요약, 저장하는데 도움이 되는 Assistant 입니다."
-            "모든 정보들은 markdown 형식으로 작성하세요."
-            "최대한 많은 정보를 자세한 내용으로 제공하세요."
-            "각각의 자료 출처들을 반드시 표기하세요."
-            "모든 응답은 한국어로 작성하세요."
-            "최종 답변은 모든 출처와 관련 링크를 포함해 변경없이 동일하게 .txt 파일에 저장해야 합니다."
-        ),
+        instructions="""
+        사용자의 질의에 대해 Wikipedia 또는 DuckDuckGo 에서 완전하고 정확한 정보를 수집합니다.
+
+        Wikipedia 또는 DuckDuckGo에서 적절한 웹사이트를 찾으면, 해당 웹사이트의 컨텐츠를 스크랩해야 합니다. 스크랩한 컨텐츠를 사용하여 질문에 대한 자세한 답변을 철저히 조사하고 형식화하세요.
+
+        Wikipedia와 DuckDuckGo에서 검색하여 찾은 관련 웹사이트의 정보를 결합합니다. 최종 답변이 잘 정리되고 상세하며, 관련 링크(URL)와 함께 자료의 출처가 정확한지 여부와 잘 포함되어 있는지 여부를 확인합니다.
+
+        링크는 맨 마지막에 포함되어야 합니다.
+        모든 응답은 한국어로 작성하세요.
+        """,
         model="gpt-4o-mini-2024-07-18",
         temperature=0.1,
         tools=functions,
@@ -350,10 +352,11 @@ else:
 
         # 답변 생성 완료 후 새로운 AI 메시지를 표시
         message = (
-            assistant_client.get_messages(thread_id)[-1]
+            assistant_client.get_messages(thread_id)[-2]
             .content[0]
             .text.value.replace("$", "\$")
         )
+        print(assistant_client.get_messages(thread_id)[-2])
 
         # 새로운 답변을 'ai' 메시지로 표시
         with response_placeholder.container():
