@@ -133,7 +133,7 @@ class IssueSearchClient:
         text = inputs["text"]
         with open("research_report.txt", "w", encoding="utf-8") as f:
             f.write(text)
-        st.download_button(label="다운로드", file_name="research_report.txt", data=text)
+        st.download_button(label="다운로드", file_name="final.txt_result", data=text)
         return "저장 완료"
 
 
