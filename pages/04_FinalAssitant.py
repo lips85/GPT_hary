@@ -129,6 +129,13 @@ class IssueSearchClient:
         self.docs = self.loader.load()
         return self.docs[0].page_content
 
+    def save_file(inputs):
+        text = inputs["text"]
+        with open("research_report.txt", "w", encoding="utf-8") as f:
+            f.write(text)
+        st.download_button(label="다운로드", file_name="research_report.txt", data=text)
+        return "저장 완료"
+
 
 issue_search_client = IssueSearchClient()
 discussion_client = ChatMemory()
@@ -137,6 +144,7 @@ functions_map = {
     "get_websites_by_wikipedia_search": issue_search_client.get_websites_by_wikipedia_search,
     "get_websites_by_duckduckgo_search": issue_search_client.get_websites_by_duckduckgo_search,
     "get_document_text": issue_search_client.get_document_text,
+    "save_file": issue_search_client.save_file,
 }
 
 # 도구 설명을 한국어로 변경
@@ -189,6 +197,23 @@ functions = [
                     }
                 },
                 "required": ["url"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "save_file",
+            "description": "텍스트를 파일로 저장하기 위해 이 도구를 사용하세요.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "text": {
+                        "type": "string",
+                        "description": "저장할 텍스트입니다.",
+                    }
+                },
+                "required": ["text"],
             },
         },
     },
