@@ -129,7 +129,7 @@ class IssueSearchClient:
         self.docs = self.loader.load()
         return self.docs[0].page_content
 
-    def save_file(inputs):
+    def save_file(self, inputs):
         text = inputs["text"]
         with open("research_report.txt", "w", encoding="utf-8") as f:
             f.write(text)
