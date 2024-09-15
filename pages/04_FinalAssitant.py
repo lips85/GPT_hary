@@ -5,27 +5,18 @@ from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.document_loaders.web_base import WebBaseLoader
 from openai import OpenAI
+
+# 환경변수 저장, 상수 임포트, 채팅 클래스
 from utils.functions.chat import ChatMemory
-from dotenv import load_dotenv
 from utils.constant.constant import OPENAI_MODEL
 from utils.functions.save_env import SaveEnv
-from utils.functions.debug import Debug
-
-# # 추가된 임포트
-# import wikipedia
-# from bs4 import BeautifulSoup
-
-load_dotenv()
-
-# # wikipedia 패키지의 BeautifulSoup 함수 오버라이드
-# _original_bs = wikipedia.wikipedia.BeautifulSoup
 
 
-# def _new_bs(html):
-#     return BeautifulSoup(html, features="lxml")
+# 디버깅용 임포트 (업로드시 주석처리)
+# from utils.functions.debug import Debug
+# from dotenv import load_dotenv
+# load_dotenv()
 
-
-# wikipedia.wikipedia.BeautifulSoup = _new_bs
 
 # 세션 상태 초기화
 for key, default in [
@@ -58,6 +49,7 @@ if not (st.session_state["api_key_check"] and st.session_state["openai_model_che
     )
 
 
+# openai assistant 클래스
 class ThreadClient:
     def __init__(self, client):
         self.client = client
@@ -113,6 +105,7 @@ class ThreadClient:
         )
 
 
+# 위키피디아, 덕덕고 검색 클래스
 class IssueSearchClient:
 
     def __init__(self):
@@ -235,7 +228,8 @@ with st.sidebar:
     else:
         st.warning("API_KEY를 입력하세요.")
 
-    st.button("디버깅용 버튼", on_click=Debug.my_api_key)
+    # 디버깅용 버튼 (업로드시 주석처리)
+    # st.button("디버깅용 버튼", on_click=Debug.my_api_key)
 
     # OpenAI 모델 선택 박스
     st.selectbox(
