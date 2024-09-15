@@ -224,12 +224,12 @@ def get_assistant(client):
     assistant = client.beta.assistants.create(
         name="리서치 어시스턴트",
         instructions=(
-            "당신은 사용자에게 위키백과와 덕덕고를 이용한 키워드 연구를 도와줍니다."
-            "Use the 'wikipedia_search_tool' or 'duckduckgo_search_tool' as needed. "
+            "당신은 fuctions를 이용하여 사용자가 원하는 키워드를 검색, 요약, 저장하는데 도움이 되는 Assistant 입니다."
             "모든 정보들은 markdown 형식으로 작성하세요."
             "최대한 많은 정보를 자세한 내용으로 제공하세요."
             "각각의 자료 출처들을 반드시 표기하세요."
             "모든 응답은 한국어로 작성하세요."
+            "최종 답변은 모든 출처와 관련 링크를 포함해 변경없이 동일하게 .txt 파일에 저장해야 합니다."
         ),
         model="gpt-4o-mini-2024-07-18",
         temperature=0.1,
