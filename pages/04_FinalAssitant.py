@@ -1,15 +1,3 @@
-# (EN)
-# Refactor the agent you made in the previous assignment into an OpenAI Assistant.
-# Give it a user interface with Streamlit that displays the conversation history.
-# Allow the user to use its own OpenAI API Key, load it from an st.input inside of st.sidebar
-# Using st.sidebar put a link to the Github repo with the code of your Streamlit app.
-
-# (KR)
-# 이전 과제에서 만든 에이전트를 OpenAI 어시스턴트로 리팩터링합니다.
-# 대화 기록을 표시하는 Streamlit 을 사용하여 유저 인터페이스를 제공하세요.
-# 유저가 자체 OpenAI API 키를 사용하도록 허용하고, st.sidebar 내부의 st.input에서 이를 로드합니다.
-# st.sidebar를 사용하여 Streamlit app 의 코드과 함께 깃허브 리포지토리에 링크를 넣습니다.
-
 import time
 import json
 import streamlit as st
@@ -23,8 +11,21 @@ from utils.constant.constant import OPENAI_MODEL
 from utils.functions.save_env import SaveEnv
 from utils.functions.debug import Debug
 
+# # 추가된 임포트
+# import wikipedia
+# from bs4 import BeautifulSoup
+
 load_dotenv()
 
+# # wikipedia 패키지의 BeautifulSoup 함수 오버라이드
+# _original_bs = wikipedia.wikipedia.BeautifulSoup
+
+
+# def _new_bs(html):
+#     return BeautifulSoup(html, features="lxml")
+
+
+# wikipedia.wikipedia.BeautifulSoup = _new_bs
 
 # 세션 상태 초기화
 for key, default in [
@@ -33,32 +34,40 @@ for key, default in [
     ("api_key_check", False),
     ("openai_model", "선택해주세요"),
     ("openai_model_check", False),
-    ("assistant_id", ""),
-    ("assistant", ""),
+    ("query", None),
+    ("assistant", None),
+    ("thread", None),
 ]:
     if key not in st.session_state:
         st.session_state[key] = default
-
 
 st.set_page_config(
     page_title="AssistantGPT",
     page_icon="🚀",
     layout="wide",
 )
+st.title("🚀 리서치 마스터 🚀")
 
-st.markdown(
+if not (st.session_state["api_key_check"] and st.session_state["openai_model_check"]):
+
+    st.markdown(
+        """
+        검색은 저에게 맡겨주세요! 여러분들의 시간을 아껴드리겠습니다.
+        (OpenAI Assistant API 사용)
     """
-    # 🚀 리서치 마스터  🚀 
-    
-    검색은 저에게 맡겨주세요! 여러분들의 시간을 아껴드리겠습니다.
-    (OpenAI Assistant APi 사용)
- """
-)
+    )
 
 
 class ThreadClient:
     def __init__(self, client):
         self.client = client
+
+    def create_run(self, assistant_id, thread_id):
+        run = self.client.beta.threads.runs.create(
+            thread_id=thread_id,
+            assistant_id=assistant_id,
+        )
+        return run
 
     def get_run(self, run_id, thread_id):
         return self.client.beta.threads.runs.retrieve(
@@ -68,16 +77,16 @@ class ThreadClient:
 
     def send_message(self, thread_id, content):
         return self.client.beta.threads.messages.create(
-            thread_id=thread_id, role="user", content=content
+            thread_id=thread_id,
+            role="user",
+            content=content,
         )
 
     def get_messages(self, thread_id):
         messages = self.client.beta.threads.messages.list(thread_id=thread_id)
         messages = list(messages)
         messages.reverse()
-        for message in messages:
-            if message.role == "user":
-                discussion_client.send_message(message.content[0].text.value, "user")
+        return messages
 
     def get_tool_outputs(self, run_id, thread_id):
         run = self.get_run(run_id, thread_id)
@@ -97,20 +106,11 @@ class ThreadClient:
 
     def submit_tool_outputs(self, run_id, thread_id):
         outputs = self.get_tool_outputs(run_id, thread_id)
-        discussion_client.send_message("이슈를 찾았어요!", "ai")
-        discussion_client.send_message(outputs[0]["output"], "ai")
-
         return self.client.beta.threads.runs.submit_tool_outputs(
             run_id=run_id,
             thread_id=thread_id,
             tool_outputs=outputs,
         )
-
-    def wait_on_run(self, run, thread):
-        while run.status == "queued" or run.status == "in_progress":
-            run = self.get_run(run.id, thread.id)
-            time.sleep(0.5)
-        return run
 
 
 class IssueSearchClient:
@@ -146,18 +146,19 @@ functions_map = {
     "get_document_text": issue_search_client.get_document_text,
 }
 
+# 도구 설명을 한국어로 변경
 functions = [
     {
         "type": "function",
         "function": {
             "name": "get_websites_by_wikipedia_search",
-            "description": "Use this tool to find the websites for the given query.",
+            "description": "주어진 쿼리에 대한 웹사이트를 찾기 위해 이 도구를 사용하세요.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "The query you will search for. Example query: Research about the XZ backdoor",
+                        "description": "검색할 쿼리입니다. 예: XZ 백도어에 대한 연구",
                     }
                 },
                 "required": ["query"],
@@ -168,13 +169,13 @@ functions = [
         "type": "function",
         "function": {
             "name": "get_websites_by_duckduckgo_search",
-            "description": "Use this tool to find the websites for the given query.",
+            "description": "주어진 쿼리에 대한 웹사이트를 찾기 위해 이 도구를 사용하세요.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "The query you will search for. Example query: Research about the XZ backdoor",
+                        "description": "검색할 쿼리입니다. 예: XZ 백도어에 대한 연구",
                     }
                 },
                 "required": ["query"],
@@ -185,13 +186,13 @@ functions = [
         "type": "function",
         "function": {
             "name": "get_document_text",
-            "description": "Use this tool to load the website for the given url.",
+            "description": "주어진 URL의 웹사이트를 로드하기 위해 이 도구를 사용하세요.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "url": {
                         "type": "string",
-                        "description": "The url you will load. Example url: https://en.wikipedia.org/wiki/Backdoor_(computing)",
+                        "description": "로드할 URL입니다. 예: https://ko.wikipedia.org/wiki/백도어",
                     }
                 },
                 "required": ["url"],
@@ -200,12 +201,31 @@ functions = [
     },
 ]
 
+
+def get_assistant(client):
+    assistant = client.beta.assistants.create(
+        name="리서치 어시스턴트",
+        instructions=(
+            "당신은 사용자에게 위키백과와 덕덕고를 이용한 키워드 연구를 도와줍니다."
+            "Use the 'wikipedia_search_tool' or 'duckduckgo_search_tool' as needed. "
+            "모든 정보들은 markdown 형식으로 작성하세요."
+            "최대한 많은 정보를 자세한 내용으로 제공하세요."
+            "각각의 자료 출처들을 반드시 표기하세요."
+            "모든 응답은 한국어로 작성하세요."
+        ),
+        model="gpt-4o-mini-2024-07-18",
+        temperature=0.1,
+        tools=functions,
+    )
+    return assistant
+
+
 with st.sidebar:
     # API Key 입력 필드
     st.text_input(
         "API_KEY 입력",
         placeholder="sk-...",
-        on_change=SaveEnv.save_api_key,  # 인스턴스 메서드로 변경
+        on_change=SaveEnv.save_api_key,
         key="api_key",
         type="password",
     )
@@ -221,7 +241,7 @@ with st.sidebar:
     st.selectbox(
         "OpenAI Model을 선택하세요.",
         options=OPENAI_MODEL,
-        on_change=SaveEnv.save_openai_model,  # 인스턴스 메서드로 변경
+        on_change=SaveEnv.save_openai_model,
         key="openai_model",
     )
 
@@ -233,7 +253,7 @@ with st.sidebar:
     st.write(
         """
         Made by hary.
-        
+
         Github
         https://github.com/lips85/GPT_hary
 
@@ -251,52 +271,74 @@ if not (st.session_state["api_key_check"] and st.session_state["openai_model_che
         st.warning("Please write down a **:blue[OpenAI Model Select]** on the sidebar.")
 
 else:
-    client = OpenAI(api_key=st.session_state["api_key"])
-    assistant = client.beta.assistants.create(
-        name="Research Assistant",
-        instructions="You help users do research on keyword from wikipedia and duckduckgo.",
-        model="gpt-4o-mini-2024-07-18",
-        tools=functions,
+    st.chat_message("ai").markdown(
+        "안녕하세요. 저는 리서치 어시스턴트입니다. 무엇을 도와드릴까요?"
     )
-    assistant_id = assistant.id
-    st.session_state["assistant_id"] = assistant_id
+    client = OpenAI(api_key=st.session_state["api_key"])
 
-    discussion_client.send_message("무엇이든 물어보세요!", "ai", save=False)
-    discussion_client.paint_history()
-    query = st.chat_input("Ask a question to the website.")
+    if st.session_state["assistant"] is None:
+        st.session_state["assistant"] = get_assistant(client)
+        assistant_id = st.session_state["assistant"].id
+    else:
+        assistant_id = st.session_state["assistant"].id
+
+    # 이전 메시지 히스토리 표시
+    if st.session_state["messages"]:
+        discussion_client.paint_history()
+
+    query = st.chat_input("웹사이트에 질문을 해보세요.")
 
     if query:
-        st.session_state["query"] = query
-        discussion_client.send_message(query, "human")
-        thread = client.beta.threads.create(
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"{query}",
-                }
-            ]
-        )
-        thread_id = thread.id
-        run = client.beta.threads.runs.create(
-            thread_id=thread_id,
-            assistant_id=assistant_id,
-        )
-        run_id = run.id
+        # 새로운 메시지를 세션 상태에 추가
+        discussion_client.save_message(query, "human")
 
-        assistant = ThreadClient(client)
-        run = assistant.wait_on_run(run, thread)
+        # 사용자 메시지 표시
+        st.chat_message("human").markdown(query)
 
-        if run:
-            discussion_client.send_message("이슈를 찾고 있어요!", "ai", save=False)
-            discussion_client.paint_history()
-            assistant.get_tool_outputs(run_id, thread_id)
-            assistant.submit_tool_outputs(run_id, thread_id)
-            st.download_button(
-                label="채팅 내역 다운로드",
-                data=json.dumps(st.session_state["messages"]),
-                file_name="chat_history.txt",
-                mime="text/plain",
+        # 답변이 표시될 공간을 미리 할당
+        response_placeholder = st.empty()
+
+        # 스피너를 사용하는 동안 이전 답변이 복사되지 않도록 placeholder에 '답변 생성 중...' 텍스트 표시
+        with st.spinner(f"🔍 :blue[{query}] 답변 생성 중.. "):
+            thread = client.beta.threads.create(
+                messages=[
+                    {
+                        "role": "user",
+                        "content": f"{query}",
+                    }
+                ]
             )
+            thread_id = thread.id
+            assistant_client = ThreadClient(client)
+            run = assistant_client.create_run(assistant_id, thread_id)
+            run_id = run.id
 
-    else:
-        st.session_state["messages"] = []
+            # 답변 대기 중에도 기존 메시지를 계속 표시
+            while assistant_client.get_run(run_id, thread_id).status in [
+                "queued",
+                "in_progress",
+                "requires_action",
+            ]:
+                with st.spinner("필요한 도구를 실행 중입니다..."):
+                    if (
+                        assistant_client.get_run(run_id, thread_id).status
+                        == "requires_action"
+                    ):
+                        assistant_client.submit_tool_outputs(run_id, thread_id)
+                        time.sleep(0.5)
+                    else:
+                        time.sleep(0.5)
+
+        # 답변 생성 완료 후 새로운 AI 메시지를 표시
+        message = (
+            assistant_client.get_messages(thread_id)[-1]
+            .content[0]
+            .text.value.replace("$", "\$")
+        )
+
+        # 새로운 답변을 'ai' 메시지로 표시
+        with response_placeholder.container():
+            st.chat_message("ai").markdown(message)
+
+        # 세션에 메시지 추가
+        discussion_client.save_message(message, "ai")
