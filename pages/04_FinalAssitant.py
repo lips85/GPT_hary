@@ -352,7 +352,7 @@ else:
 
         # 답변 생성 완료 후 새로운 AI 메시지를 표시
         message = (
-            assistant_client.get_messages(thread_id)[-2]
+            assistant_client.get_messages(thread_id)[-1]
             .content[0]
             .text.value.replace("$", "\$")
         )
