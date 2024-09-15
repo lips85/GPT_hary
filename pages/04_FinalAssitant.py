@@ -55,7 +55,7 @@ class ThreadClient:
         self.client = client
 
     def create_run(self, assistant_id, thread_id):
-        run = self.client.beta.threads.runs.create(
+        run = self.client.beta.threads.runs.create.stream(
             thread_id=thread_id,
             assistant_id=assistant_id,
         )
