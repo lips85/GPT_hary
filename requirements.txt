@@ -142,7 +142,7 @@ playwright==1.39.0
 portalocker==2.8.2
 posthog==3.0.2
 preshed==3.0.9
-primp==0.6.1
+primp==0.6.2
 prompt-toolkit==3.0.39
 protobuf==4.24.3
 psutil==5.9.5
